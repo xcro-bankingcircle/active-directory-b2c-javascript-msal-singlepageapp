@@ -45,24 +45,27 @@
 
     <script>
         "use strict";
-        var clientApplication = new Msal.UserAgentApplication(applicationConfig.clientID, applicationConfig.authority, function (errorDesc, token, error, tokenType) {
-            // Called after loginRedirect or acquireTokenPopup
-        });
+        var clientApplication = new Msal.UserAgentApplication(applicationConfig.clientID, applicationConfig.authority, onTokenReceived);
 
-        function login() {
-            clientApplication.loginPopup(applicationConfig.b2cScopes).then(function (idToken) {
+        function onTokenReceived(errorDesc, idToken, error, tokenType) {
+            //This function is called after loginRedirect
+            if (idToken) {
                 clientApplication.acquireTokenSilent(applicationConfig.b2cScopes).then(function (accessToken) {
                     updateUI();
                 }, function (error) {
                     clientApplication.acquireTokenPopup(applicationConfig.b2cScopes).then(function (accessToken) {
                         updateUI();
                     }, function (error) {
-                        logMessage("Error acquiring the popup:\n" + error);
+                        logMessage("Error during login:\n" + error);
                     });
-                })
-            }, function (error) {
-                logMessage("Error during login:\n" + error);
-            });
+                })            }
+            else if (errorDesc || error) {
+                logMessage(error + ':' + errorDesc);
+            }
+        }
+
+        function login() {
+            clientApplication.loginRedirect(applicationConfig.b2cScopes);
         }
 
         function updateUI() {
